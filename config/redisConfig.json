@@ -1,0 +1,6 @@
+{
+  "redisServerIP": "localhost",
+  "redisServerPort": "6379",
+  "redisConnType" : "tcp",
+  "redisServerPass" : "shuffle123"
+}
