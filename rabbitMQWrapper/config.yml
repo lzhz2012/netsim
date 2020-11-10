@@ -1,0 +1,31 @@
+dsn: "amqp://test:test@localhost:5672/my_vhost"
+reconnect_delay: 1s
+exchanges:
+  - name: "demo"
+    type: "direct"
+    options:
+      durable: true
+queues:
+  - name: "queue_name"
+    exchange: "demo"
+    routing_key: "key"
+    options:
+      durable: true
+producers:
+  - name: "async_producer"
+    exchange: "demo"
+    routing_key: "key"
+    options:
+      content_type: "text/plain"
+      delivery_mode: 2
+  - name: "sync_producer"
+    exchange: "demo"
+    routing_key: "key"
+    sync: true
+    options:
+      content_type: "text/plain"
+      delivery_mode: 2
+consumers:
+  - name: "consumer_name"
+    queue: "queue_name"
+    workers: 1

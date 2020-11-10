@@ -1,0 +1,115 @@
+package main
+
+import (
+	"fmt"
+	"github.com/cheshir/go-mq"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
+	"log"
+	"time"
+)
+
+var externalConfig = `
+dsn: "amqp://guest:guest@localhost:5672/my_vhost"
+reconnect_delay: 1s
+exchanges:
+  - name: "demo"
+    type: "direct"
+    options:
+      durable: true
+queues:
+  - name: "queue_name"
+    exchange: "demo"
+    routing_key: "key"
+    options:
+      durable: true
+producers:
+  - name: "async_producer"
+    exchange: "demo"
+    routing_key: "key"
+    options:
+      content_type: "text/plain"
+      delivery_mode: 2
+  - name: "sync_producer"
+    exchange: "demo"
+    routing_key: "key"
+    sync: true
+    options:
+      content_type: "text/plain"
+      delivery_mode: 2
+consumers:
+  - name: "consumer_name"
+    queue: "queue_name"
+    workers: 1
+`
+var queue_config_yml = `
+name: "queue_name"
+exchange: "demo"
+routing_key: "key"
+`
+var handle bool = false
+
+func consumer_handler(message mq.Message) {
+	if handle == true {
+		println(string(message.Body()))
+
+		message.Ack(false)
+	}
+	message.Ack(false)
+}
+
+func main() {
+	var config mq.Config // Set your configuration.
+	var quecfig mq.QueueConfig
+
+	err2 := yaml.Unmarshal([]byte(queue_config_yml), &quecfig)
+
+	log.Printf("queue %s", quecfig, err2)
+
+	//queue.setupQueues()
+
+	yamlFile, err1 := ioutil.ReadFile("config.yml")
+
+	if err1 != nil {
+		log.Printf("yamlFile.Get err   #%v ", err1)
+	}
+
+	err := yaml.Unmarshal(yamlFile, &config)
+	//err := yaml.Unmarshal([]byte(externalConfig), &config)
+	if err != nil {
+		log.Fatal("Failed to read config", err)
+	}
+
+	queue, err := mq.New(config)
+	if err != nil {
+		log.Fatal("Failed to initialize message queue manager", err)
+	}
+
+	defer queue.Close()
+	go handleMQErrors(queue.Error())
+
+	// Other logic.
+
+	err = queue.SetConsumerHandler("consumer_name", consumer_handler)
+
+	producer, err := queue.SyncProducer("sync_producer")
+	if err != nil {
+		log.Fatal("Failed to get sync producer: ", err)
+	}
+
+	for i := 0; i < 3; i++ {
+		err = producer.Produce([]byte(fmt.Sprintf("Hello from sync producer #%d", i)))
+		if err != nil {
+			log.Fatal("Failed to send message from sync producer")
+		}
+
+		time.Sleep(time.Second)
+	}
+
+}
+
+func handleMQErrors(errors <-chan error) {
+	for err := range errors {
+		log.Println(err)
+	}
+}
