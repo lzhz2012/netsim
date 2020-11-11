@@ -1,4 +1,4 @@
-module github.com/lzhz2012/netsim/v1
+module github.com/lzhz2012/netsim
 
 go 1.15
 
