@@ -276,7 +276,7 @@ func (cli *DockerCliWrapper) RemoveContainer(containername string) error {
 //FIXME:目前仅仅做了在单一机器上的判断，后面分布式的时候
 func (cli *DockerCliWrapper) IsContainerRunning(name string) bool {
 	name = "/" + name
-	listOps := types.ContainerListOptions{}
+	listOps := types.ContainerListOptions{All: true}
 	containers, err := cli.DockerCli.ContainerList(context.Background(), listOps)
 	if err != nil {
 		log.Error(fmt.Sprintf("Unable to list docker containers: %s", err))

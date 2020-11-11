@@ -71,6 +71,7 @@ func (cli *RedisClient) isRedisConnect() bool {
 	_, err := cli.conn.Do("PING")
 	if err != nil {
 		logrus.WithFields(logrus.Fields{"err": err}).Error("PING Redis server failed!")
+		return false
 	}
 	return true
 }
