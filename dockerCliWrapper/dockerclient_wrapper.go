@@ -145,9 +145,12 @@ func (cli *DockerCliWrapper) BuildImage(cfg *BuildCfg) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("Build resource image output: %v", string(body))
+	var content string
+	//err = json.Unmarshal(body, content)
+	content = string(body)
+	log.Printf("Build resource image output: %s", content)
 
-	if strings.Contains(string(body), "error") {
+	if !strings.Contains(string(body), "Successfully built") {
 		return fmt.Errorf("build image to docker error")
 	}
 

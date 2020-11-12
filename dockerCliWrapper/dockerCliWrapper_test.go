@@ -1,11 +1,8 @@
 package dockerCliWrapper
 
 import (
-	"archive/tar"
-	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -127,67 +124,38 @@ func TestIsContainerRunning(t *testing.T) {
 		log.Printf("not running!")
 	}
 }
-
-func generateTarFile(tw *tar.Writer, traversalDir string) error {
+func deleTarFile(fileName string) error {
+	if err := os.Remove(fileName); err != nil {
+		fmt.Println(err)
+		return err
+	}
+	return nil
+}
+func TestBuildImage(t *testing.T) {
 
 	var files, dirs []string
 
-	if err := utils.GetFilesAndDirs(traversalDir, &files, &dirs); err != nil {
-		log.Error("遍历文件夹失败，错误原因:", err)
-		return err
+	transerveDir := ".\\orborus" //"D:\\code\\go_test"
+	if err := utils.GetFilesAndDirs(transerveDir, &files, &dirs); err != nil {
+		fmt.Printf("遍历文件夹失败，错误原因：%s", err)
 	}
-
-	for _, file := range files {
-		fileReader, err := os.Open(file)
-		if err != nil {
-			return err
-		}
-		// Read the actual Dockerfile
-		readFile, err := ioutil.ReadAll(fileReader)
-		if err != nil {
-			logrus.Error("Not file:", err)
-			return err
-		}
-
-		// filenamesplit := strings.Split(file, "/")
-		// filename := fmt.Sprintf("%s%s", extra, filenamesplit[len(filenamesplit)-1])
-		//log.Printf("Filename: %s", filename)
-		filename := file
-		tarHeader := &tar.Header{
-			Name: filename,
-			Size: int64(len(readFile)),
-		}
-
-		//Writes the header described for the TAR file
-		err = tw.WriteHeader(tarHeader)
-		if err != nil {
-			return err
-		}
-
-		// Writes the dockerfile data to the TAR file
-		_, err = tw.Write(readFile)
-		if err != nil {
-			return err
-		}
+	//_ = dirs
+	//files = append(files, "D:\\code\\netsim\\dockerCliWrapper\\orborus\\Dockerfile")
+	// need to filter some unuseful files
+	dst := "a.tar"
+	if err := utils.Tar(files, dst); err != nil {
+		log.Fatal(err)
 	}
+	defer deleTarFile(dst)
 
-	return nil
-
-}
-
-func TestBuildImage(t *testing.T) {
-	tag := fmt.Sprintf("%s-%s", "app_sdk", "1.0.0")
-	buf := new(bytes.Buffer)
-	tw := tar.NewWriter(buf)
-	defer tw.Close()
-	generateTarFile(tw, "./baidu")
-	dockerCliCfg := &dockerCliWrapper.DockerCliCfg{DockerApiVersion: "1.40"}
-	cli, err := dockerCliWrapper.NewClient(dockerCliCfg)
+	dockerCliCfg := &DockerCliCfg{DockerApiVersion: "1.40"}
+	cli, err := NewClient(dockerCliCfg)
 	if err != nil {
 		logrus.Error("Unable to create docker client", err)
 	}
 
-	buildCfg := dockerCliWrapper.BuildCfg{ImageName: tag, TarFile: tw}
+	tag := fmt.Sprintf("%s-%s", "app_sdk", "1.0.0")
+	buildCfg := BuildCfg{ImageName: tag, TarFile: dst}
 	if err := cli.BuildImage(&buildCfg); err != nil {
 		logrus.Debug("Build error:", err.Error())
 		return
