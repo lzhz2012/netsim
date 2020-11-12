@@ -1,13 +1,19 @@
 package dockerCliWrapper
 
 import (
+	"archive/tar"
+	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/docker/docker/api/types"
+	"github.com/lzhz2012/netsim/utils"
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -119,5 +125,71 @@ func TestIsContainerRunning(t *testing.T) {
 	cli, _ := NewClient(dockerCliCfg)
 	if !cli.IsContainerRunning("shuffle-agent") {
 		log.Printf("not running!")
+	}
+}
+
+func generateTarFile(tw *tar.Writer, traversalDir string) error {
+
+	var files, dirs []string
+
+	if err := utils.GetFilesAndDirs(traversalDir, &files, &dirs); err != nil {
+		log.Error("遍历文件夹失败，错误原因:", err)
+		return err
+	}
+
+	for _, file := range files {
+		fileReader, err := os.Open(file)
+		if err != nil {
+			return err
+		}
+		// Read the actual Dockerfile
+		readFile, err := ioutil.ReadAll(fileReader)
+		if err != nil {
+			logrus.Error("Not file:", err)
+			return err
+		}
+
+		// filenamesplit := strings.Split(file, "/")
+		// filename := fmt.Sprintf("%s%s", extra, filenamesplit[len(filenamesplit)-1])
+		//log.Printf("Filename: %s", filename)
+		filename := file
+		tarHeader := &tar.Header{
+			Name: filename,
+			Size: int64(len(readFile)),
+		}
+
+		//Writes the header described for the TAR file
+		err = tw.WriteHeader(tarHeader)
+		if err != nil {
+			return err
+		}
+
+		// Writes the dockerfile data to the TAR file
+		_, err = tw.Write(readFile)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+
+}
+
+func TestBuildImage(t *testing.T) {
+	tag := fmt.Sprintf("%s-%s", "app_sdk", "1.0.0")
+	buf := new(bytes.Buffer)
+	tw := tar.NewWriter(buf)
+	defer tw.Close()
+	generateTarFile(tw, "./baidu")
+	dockerCliCfg := &dockerCliWrapper.DockerCliCfg{DockerApiVersion: "1.40"}
+	cli, err := dockerCliWrapper.NewClient(dockerCliCfg)
+	if err != nil {
+		logrus.Error("Unable to create docker client", err)
+	}
+
+	buildCfg := dockerCliWrapper.BuildCfg{ImageName: tag, TarFile: tw}
+	if err := cli.BuildImage(&buildCfg); err != nil {
+		logrus.Debug("Build error:", err.Error())
+		return
 	}
 }
