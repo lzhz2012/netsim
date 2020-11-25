@@ -61,10 +61,8 @@ func CheckContainerConfig(cfg *ContainerCfg) error {
 	return nil
 }
 
-var cli DockerCliWrapper
-
 func NewClient(dockerCliCfg *DockerCliCfg) (*DockerCliWrapper, error) {
-
+	var cli DockerCliWrapper
 	//cli.DockerCli, err = dockerclient.NewClientWithOpts(dockerclient.FromEnv, dockerclient.WithVersion(dockerCliCfg.DockerApiVersion)) //仅1.42版本支持
 	//使用定制化docker Api中Ip和Port不知道怎么填写
 	//dockerHost := "tcp://" + dockerCliCfg.DockerSeverIp + ":" + dockerCliCfg.DockerSeverPort
