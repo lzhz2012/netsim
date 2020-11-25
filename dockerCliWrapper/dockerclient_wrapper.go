@@ -61,12 +61,10 @@ func CheckContainerConfig(cfg *ContainerCfg) error {
 	return nil
 }
 
-func NewClient(dockerCliCfg *DockerCliCfg) (*DockerCliWrapper, error) {
-	if dockerCliCfg == nil {
-		return nil, errors.New("null pointer")
-	}
+var cli DockerCliWrapper
 
-	var cli DockerCliWrapper
+func NewClient(dockerCliCfg *DockerCliCfg) (*DockerCliWrapper, error) {
+
 	//cli.DockerCli, err = dockerclient.NewClientWithOpts(dockerclient.FromEnv, dockerclient.WithVersion(dockerCliCfg.DockerApiVersion)) //仅1.42版本支持
 	//使用定制化docker Api中Ip和Port不知道怎么填写
 	//dockerHost := "tcp://" + dockerCliCfg.DockerSeverIp + ":" + dockerCliCfg.DockerSeverPort
@@ -78,7 +76,7 @@ func NewClient(dockerCliCfg *DockerCliCfg) (*DockerCliWrapper, error) {
 	}
 	//dockercli.SetCustomHTTPHeaders(map[string]string{"Content-type": "application/x-tar"})
 	cli.DockerCli = dockercli
-	return &cli, err
+	return &cli, nil
 }
 
 func (cli *DockerCliWrapper) PushImage(cfg *PushCfg) error {

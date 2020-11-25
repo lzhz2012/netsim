@@ -3,6 +3,7 @@ package redisWrapper
 import (
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/sirupsen/logrus"
 )
@@ -76,6 +77,29 @@ func TestRedisWrapper(t *testing.T) {
 	redisCli.Close()
 }
 
+func TestRedisWrapperBpop(t *testing.T) {
+	logrus.SetLevel(logrus.TraceLevel) //设置Trace以上的信息都显示
+
+	cfg := RedisConfig{RedisServerIP: "localhost", RedisConnType: "tcp", RedisServerPort: "6379", RedisServerPass: "shuffle123"}
+	redisCli, err := NewClient(cfg)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{"error": err}).Error("new redis client Failed")
+		return
+	}
+	defer redisCli.Close()
+	mqNameList := []string{"workflowqueueShuffle", "mqtest"}
+	timeout := uint32(0) // unit:s
+	for {
+		data, err := redisCli.Bpop(mqNameList, timeout) //bpop阻塞读取1s，如果没有读取到则返回空；当timeout为0的时候则是无穷大一直阻塞
+		if err != nil {
+			logrus.WithFields(logrus.Fields{"error": err}).Error("redis Bpop Failed")
+			continue
+		}
+		logrus.WithFields(logrus.Fields{"value": data}).Info("redis BPop value")
+	}
+
+}
+
 func TestRedisExecutionReq(t *testing.T) {
 	var executionRequestWrapper ExecutionRequestWrapper
 	executionRequest := ExecutionRequest{
@@ -99,15 +123,19 @@ func TestRedisExecutionReq(t *testing.T) {
 		logrus.WithFields(logrus.Fields{"error": err}).Error("new redis client Failed")
 		return
 	}
-	mqName := "workflowShuffle"
-	err = redisCli.Push(mqName, string(data_byte))
-	if err != nil {
-		logrus.WithFields(logrus.Fields{"error": err}).Error("redis Push Failed")
-		return
+	for {
+		mqName := "workflowqueueShuffle"
+		err = redisCli.Push(mqName, string(data_byte))
+		if err != nil {
+			logrus.WithFields(logrus.Fields{"error": err}).Error("redis Push Failed")
+			return
+		}
+		time.Sleep(2 * time.Second)
 	}
 }
 
 func TestCheckRedisConPeriod(t *testing.T) {
+	logrus.SetLevel(logrus.TraceLevel)
 	cfg := RedisConfig{RedisServerIP: "localhost", RedisConnType: "tcp", RedisServerPort: "6379", RedisServerPass: "shuffle123"}
 	redisCli, err := NewClient(cfg)
 	if err != nil {

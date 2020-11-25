@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/lzhz2012/netsim/utils"
@@ -34,7 +35,7 @@ func TestStartContainer(t *testing.T) {
 		cfg.ContainerName = "hello-word" + strconv.Itoa(i)
 		go cli.StartContainer(cfg)
 	}
-
+	time.Sleep(30 * time.Second)
 }
 
 var remoteRegistryField string = "10.1.5.224:5000/"
@@ -131,11 +132,12 @@ func deleTarFile(fileName string) error {
 	}
 	return nil
 }
+
 func TestBuildImage(t *testing.T) {
 
 	var files, dirs []string
 
-	transerveDir := ".\\orborus" //"D:\\code\\go_test"
+	transerveDir := "..\\orborus" //"D:\\code\\go_test"
 	if err := utils.GetFilesAndDirs(transerveDir, &files, &dirs); err != nil {
 		fmt.Printf("遍历文件夹失败，错误原因：%s", err)
 	}
