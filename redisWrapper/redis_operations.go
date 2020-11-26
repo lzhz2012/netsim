@@ -17,10 +17,10 @@ type RedisConfig struct {
 
 type RedisClient struct {
 	conn     redis.Conn
-	RedisCfg RedisConfig
+	RedisCfg []RedisConfig
 }
 
-func NewClient(cfg RedisConfig) (*RedisClient, error) {
+func NewClient(cfg []RedisConfig) (*RedisClient, error) {
 	redisCli := &RedisClient{RedisCfg: cfg}
 	err := redisCli.Connect()
 	if err != nil {
@@ -34,18 +34,27 @@ func (cli *RedisClient) Connect() error {
 	if cli == nil {
 		return errors.New("redis client is nil")
 	}
-	conn, err := redis.Dial(cli.RedisCfg.RedisConnType, cli.RedisCfg.RedisServerIP+":"+cli.RedisCfg.RedisServerPort,
-		redis.DialPassword("shuffle123"))
+	var conn redis.Conn
+	for _, cfg := range cli.RedisCfg {
+		connTemp, err := redis.Dial(cfg.RedisConnType, cfg.RedisServerIP+":"+cfg.RedisServerPort,
+			redis.DialPassword(cfg.RedisServerPass))
+		if err != nil {
+			logrus.WithFields(logrus.Fields{"err": err}).Error("connect Redis failed")
+		} else {
+			conn = connTemp
+		}
+	}
 
 	// conn, err := redis.Dial(redisConnType, cli.redisServerIP + cli.redisServerPort,
 	// 	redis.DialPassword(g_redisServerPasswd), redis.DialConnectTimeout(time.Duration(10)*time.Second),
 	// 	redis.DialWriteTimeout(time.Duration(1000)*time.Millisecond), redis.DialReadTimeout(time.Duration(1000)*time.Millisecond),
 	// 	redis.DialDatabase(0)) // 设置连接，读写超时时间，并设置连接默认连接数据库0
-	if err != nil {
-		logrus.WithFields(logrus.Fields{"err": err}).Error("connect Redis failed")
-		return err
+	if conn == nil {
+		logrus.Error("connect Redis failed")
+		return errors.New("connect redis client failed")
 	}
 	cli.conn = conn
+
 	return nil
 }
 

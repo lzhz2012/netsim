@@ -26,7 +26,10 @@ func TestRedisProducer(t *testing.T) {
 
 	logrus.SetLevel(logrus.TraceLevel) //设置Trace以上的信息都显示
 
-	cfg := RedisConfig{RedisServerIP: "localhost", RedisConnType: "tcp", RedisServerPort: "6379", RedisServerPass: "shuffle123"}
+	cfg := []RedisConfig{
+		{RedisServerIP: "localhost", RedisConnType: "tcp", RedisServerPort: "6379", RedisServerPass: "shuffle123"},
+		{RedisServerIP: "10.1.5.68", RedisConnType: "tcp", RedisServerPort: "6379", RedisServerPass: "123456"},
+	}
 	redisCli, err := NewClient(cfg)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{"error": err}).Error("new redis client Failed")
