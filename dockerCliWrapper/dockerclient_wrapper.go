@@ -63,11 +63,17 @@ func CheckContainerConfig(cfg *ContainerCfg) error {
 
 func NewClient(dockerCliCfg *DockerCliCfg) (*DockerCliWrapper, error) {
 	var cli DockerCliWrapper
+	/* only new version can support*/
 	//cli.DockerCli, err = dockerclient.NewClientWithOpts(dockerclient.FromEnv, dockerclient.WithVersion(dockerCliCfg.DockerApiVersion)) //仅1.42版本支持
 	//使用定制化docker Api中Ip和Port不知道怎么填写
-	//dockerHost := "tcp://" + dockerCliCfg.DockerSeverIp + ":" + dockerCliCfg.DockerSeverPort
+	if dockerCliCfg.DockerSeverIp != "" && dockerCliCfg.DockerSeverPort != "" {
+		dockerHost := "tcp://" + dockerCliCfg.DockerSeverIp + ":" + dockerCliCfg.DockerSeverPort
+		os.Setenv("DOCKER_HOST", dockerHost)
+	}
+
 	//cli.DockerCli, err = dockerclient.NewClient(dockerHost, dockerCliCfg.DockerApiVersion, nil, map[string]string{"Content-type": "application/x-tar"})
 	os.Setenv("DOCKER_API_VERSION", dockerCliCfg.DockerApiVersion)
+
 	dockercli, err := dockerclient.NewEnvClient()
 	if err != nil {
 		return nil, err
@@ -76,6 +82,27 @@ func NewClient(dockerCliCfg *DockerCliCfg) (*DockerCliWrapper, error) {
 	cli.DockerCli = dockercli
 	return &cli, nil
 }
+
+// func NewClient1(dockerCliCfg *DockerCliCfg) (*DockerCliWrapper, error) {
+// 	var cli DockerCliWrapper
+// 	//cli.DockerCli, err = dockerclient.NewClientWithOpts(dockerclient.FromEnv, dockerclient.WithVersion(dockerCliCfg.DockerApiVersion)) //仅1.42版本支持
+// 	//使用定制化docker Api中Ip和Port不知道怎么填写
+// 	if dockerCliCfg.DockerSeverIp != "" && dockerCliCfg.DockerSeverPort != "" {
+// 		//dockerHost := "tcp://" + dockerCliCfg.DockerSeverIp + ":" + dockerCliCfg.DockerSeverPort
+// 		dockerHost := "ssh://" + dockerCliCfg.Username + "@" + dockerCliCfg.DockerSeverIp + ":" + dockerCliCfg.DockerSeverPort
+// 		os.Setenv("DOCKER_HOST", dockerHost)
+// 	}
+
+// 	//cli.DockerCli, err = dockerclient.NewClient(dockerHost, dockerCliCfg.DockerApiVersion, nil, map[string]string{"Content-type": "application/x-tar"})
+// 	os.Setenv("DOCKER_API_VERSION", dockerCliCfg.DockerApiVersion)
+// 	dockercli, err := client.NewClientWithOpts(client.FromEnv)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	//dockercli.SetCustomHTTPHeaders(map[string]string{"Content-type": "application/x-tar"})
+// 	cli.DockerCli = dockercli
+// 	return &cli, nil
+// }
 
 func (cli *DockerCliWrapper) PushImage(cfg *PushCfg) error {
 

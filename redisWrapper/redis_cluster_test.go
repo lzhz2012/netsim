@@ -38,6 +38,19 @@ func init() {
 }
 
 func TestConnByRedisCluster(t *testing.T) {
+	result1 := []map[string]string{
+		{"name": "backend", "status": "success"},
+		{"name": "orborus", "status": "success"},
+		{"name": "worker", "status": "failure"},
+	}
+
+	//result = map[string]string{"backend": "success", "orborus": "failure", "worker": "success"}
+	var data1 string
+	for _, item := range result1 {
+		temp, _ := json.Marshal(item)
+		data1 = data1 + "," + string(temp)
+	}
+	fmt.Println(data1)
 	// 测试一个set功能
 	s := clusterClient.Set("name", "barry", time.Second*60).String()
 	fmt.Println(s)

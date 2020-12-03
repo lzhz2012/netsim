@@ -118,6 +118,18 @@ func TestRemoveContainer(t *testing.T) {
 	}
 }
 
+/* need expose 2375 port on the remote server*/
+func TestConnectOtherHost(t *testing.T) {
+	dockerCliCfg := &DockerCliCfg{DockerApiVersion: "1.40", DockerSeverIp: "10.10.15.86", DockerSeverPort: "2375"} // non tls connection
+	cli, _ := NewClient(dockerCliCfg)
+	dockercli := cli.DockerCli
+	images, err := dockercli.ImageList(context.Background(), types.ImageListOptions{})
+	_ = images
+	if err != nil {
+		log.Error(fmt.Sprintf("Unable to list docker images: %s", err))
+	}
+}
+
 func TestIsContainerRunning(t *testing.T) {
 	dockerCliCfg := &DockerCliCfg{DockerApiVersion: "1.40"}
 	cli, _ := NewClient(dockerCliCfg)
