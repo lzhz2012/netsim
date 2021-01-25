@@ -29,7 +29,6 @@ func TestRedisWrapper(t *testing.T) {
 
 	cfg := []RedisConfig{
 		{RedisServerIP: "localhost", RedisConnType: "tcp", RedisServerPort: "6379", RedisServerPass: "shuffle123"},
-		{RedisServerIP: "10.1.5.68", RedisConnType: "tcp", RedisServerPort: "6379", RedisServerPass: "123456"},
 	}
 	redisCli, err := NewClient(cfg)
 	if err != nil {
@@ -44,7 +43,10 @@ func TestRedisWrapper(t *testing.T) {
 	redisCli.Hset(WorkflowHashMapName, key, message)
 	value, _ := redisCli.Hget(WorkflowHashMapName, key)
 	logrus.WithFields(logrus.Fields{"value": value}).Info("redis Hget value")
-
+	err = redisCli.Hdel(WorkflowHashMapName, key)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{"error": err}).Error("redis Hdel Failed")
+	}
 	//test get keys
 	pattern := "workflowqueue*"
 	keys, err := redisCli.GetKeys(pattern)

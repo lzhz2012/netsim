@@ -124,6 +124,28 @@ func (cli *RedisClient) Hget(hashMapName, key string) (string, error) {
 	return data, err
 }
 
+func (cli *RedisClient) Hdel(hashMapName, key string) error {
+	if cli == nil {
+		return errors.New("redis client is nil")
+	}
+	resp, err := cli.conn.Do("hdel", hashMapName, key)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{"key": key, "err": err}).Error("redis Hget failed")
+		return err
+	}
+
+	number, err := redis.Uint64(resp, err)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{"err": err}).Error("redis Hdel failed")
+		return err
+	}
+	if number <= 0 {
+		logrus.WithFields(logrus.Fields{"err": err}).Error("redis Hdel failed")
+		return errors.New("redi hdel return number is less than, del fail!")
+	}
+	return nil
+}
+
 func (cli *RedisClient) GetKeys(pattern string) ([]string, error) {
 	if cli == nil {
 		return []string{}, errors.New("redis client is nil")
