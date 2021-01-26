@@ -60,8 +60,9 @@ func TestRedisWrapper(t *testing.T) {
 		return
 	}
 	lockKey := "qqqq"
+	lockKey1 := "qqqq1" // dead lock
 	err = redisCli.Lock(lockKey, "qqq", 30000)
-	err = redisCli.Lock(lockKey, "qqq", 30000)
+	err = redisCli.Lock(lockKey1, "qqq1", 0)
 	err = redisCli.UnLock(lockKey)
 	err = redisCli.Push("mqtest1", "this is the test message")
 	if err != nil {

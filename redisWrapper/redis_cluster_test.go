@@ -109,3 +109,17 @@ func TestConnByRedisClusterProducer(t *testing.T) {
 		time.Sleep(2 * time.Second)
 	}
 }
+
+func TestSingleRedis(t *testing.T) {
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379", // use default Addr
+		Password: "",               // no password set
+		DB:       0,                // use default DB
+	})
+
+	pong, err := rdb.Ping().Result()
+	fmt.Println(pong, err)
+
+	rdb.SetNX("kfdskfs", 1, time.Second*60)
+
+}

@@ -100,9 +100,14 @@ func (cli *RedisClient) Lock(key, value string, lifeTime uint64) error {
 	if key == "" {
 		return errors.New("lock failed: key is nil")
 	}
-
-	resp, err := cli.conn.Do("set", key, value, "NX", "PX", lifeTime)
-	data, err := redis.String(resp, err)
+	var resp interface{}
+	var err error
+	if lifeTime == 0 {
+		resp, err = cli.conn.Do("setnx", key, value)
+	} else {
+		resp, err = cli.conn.Do("set", key, value, "NX", "PX", lifeTime) // lifeTime unit: ms
+	}
+	data, _ := redis.String(resp, err)
 	if err != nil || data != "OK" {
 		logrus.WithFields(logrus.Fields{"err": err}).Error("lock failed:setNX failed")
 	}
@@ -116,10 +121,14 @@ func (cli *RedisClient) UnLock(key string) error {
 	}
 	resp, err := cli.conn.Do("del", key)
 	number, _ := redis.Uint64(resp, err)
-	if err != nil || number != 1 {
+	if err != nil {
 		logrus.WithFields(logrus.Fields{"err": err}).Error("Unlock failed:del key failed")
+		return err
 	}
-	return err
+	if number != 1 {
+		logrus.WithFields(logrus.Fields{"err": err}).Debug("key of the lock is not exist")
+	}
+	return nil
 }
 
 func (cli *RedisClient) Hset(hashMapName, key, value string) error {
