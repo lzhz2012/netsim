@@ -59,7 +59,10 @@ func TestRedisWrapper(t *testing.T) {
 		logrus.WithFields(logrus.Fields{"error": err}).Error("redis Push Failed")
 		return
 	}
-
+	lockKey := "qqqq"
+	err = redisCli.Lock(lockKey, "qqq", 30000)
+	err = redisCli.Lock(lockKey, "qqq", 30000)
+	err = redisCli.UnLock(lockKey)
 	err = redisCli.Push("mqtest1", "this is the test message")
 	if err != nil {
 		logrus.WithFields(logrus.Fields{"error": err}).Error("redis Push Failed")
