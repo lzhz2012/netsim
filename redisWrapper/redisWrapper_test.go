@@ -61,6 +61,8 @@ func TestRedisWrapper(t *testing.T) {
 	}
 	lockKey := "qqqq"
 	lockKey1 := "qqqq1" // dead lock
+	keys, err = redisCli.HKeys("shuffle_workflowexecutions_new1")
+	logrus.Println(keys, err)
 	err = redisCli.Lock(lockKey, "qqq", 30000)
 	err = redisCli.Lock(lockKey1, "qqq1", 0)
 	err = redisCli.UnLock(lockKey)

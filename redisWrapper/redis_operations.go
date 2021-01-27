@@ -198,3 +198,21 @@ func (cli *RedisClient) GetKeys(pattern string) ([]string, error) {
 
 	return data, err
 }
+
+func (cli *RedisClient) HKeys(hashMapName string) ([]string, error) {
+	if cli == nil {
+		return []string{}, errors.New("redis client is nil")
+	}
+	resp, err := cli.conn.Do("hkeys", hashMapName)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{"err": err}).Error("redis Get keys failed")
+		return []string{}, err
+	}
+
+	data, err := redis.Strings(resp, err)
+	if err != nil {
+		//logrus.WithFields(logrus.Fields{"err": err}).Error("redis Hget failed")
+	}
+
+	return data, err
+}
