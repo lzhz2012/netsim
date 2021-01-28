@@ -97,37 +97,41 @@ func (cli *RedisClient) Close() error {
 }
 
 func (cli *RedisClient) Lock(key, value string, lifeTime uint64) error {
-	if key == "" {
-		return errors.New("lock failed: key is nil")
-	}
-	var resp interface{}
+	// if key == "" {
+	// 	return errors.New("lock failed: key is nil")
+	// }
+
 	var err error
 	if lifeTime == 0 {
-		resp, err = cli.conn.Do("setnx", key, value)
+		_, err = cli.conn.Do("setnx", key, value)
 	} else {
-		resp, err = cli.conn.Do("set", key, value, "NX", "PX", lifeTime) // lifeTime unit: ms
+		_, err = cli.conn.Do("set", key, value, "NX", "PX", lifeTime) // lifeTime unit: ms
 	}
-	data, _ := redis.String(resp, err)
-	if err != nil || data != "OK" {
-		logrus.WithFields(logrus.Fields{"err": err}).Error("lock failed:setNX failed")
+	if err != nil {
+		logrus.Error("lock failed")
+		return err
 	}
 
-	return err
+	return nil
 }
 
 func (cli *RedisClient) UnLock(key string) error {
-	if key == "" {
-		return errors.New("lock failed: key is nil")
-	}
+	// if key == "" {
+	// 	return errors.New("lock failed: key is nil")
+	// }
 	resp, err := cli.conn.Do("del", key)
-	number, _ := redis.Uint64(resp, err)
+	_ = resp
 	if err != nil {
-		logrus.WithFields(logrus.Fields{"err": err}).Error("Unlock failed:del key failed")
+		logrus.Error("Unlock failed")
 		return err
 	}
-	if number != 1 {
-		logrus.WithFields(logrus.Fields{"err": err}).Debug("key of the lock is not exist")
-	}
+	// number, err := redis.Uint64(resp, err)
+	// if err != nil {
+	// 	logrus.WithFields(logrus.Fields{"err": err}).Error("redis convert to uint64 failed")
+	// }
+	// if number != 1 {
+	// 	logrus.WithFields(logrus.Fields{"err": err}).Debug("key of the lock is not exist")
+	// }
 	return nil
 }
 
@@ -139,7 +143,7 @@ func (cli *RedisClient) Hset(hashMapName, key, value string) error {
 	if err != nil {
 		logrus.WithFields(logrus.Fields{"key": key, "err": err}).Debug("redis Hset failed")
 	}
-	return err
+	return nil
 }
 
 func (cli *RedisClient) Hmget(hashMapName string, keys []string) ([]string, error) {
@@ -159,9 +163,8 @@ func (cli *RedisClient) Hmget(hashMapName string, keys []string) ([]string, erro
 	data, err := redis.Strings(eles, err)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{"err": err}).Error("redis convert to strings failed")
-		return []string{}, err
 	}
-	return data, err
+	return data, nil
 }
 
 func (cli *RedisClient) Hget(hashMapName, key string) (string, error) {
@@ -176,9 +179,9 @@ func (cli *RedisClient) Hget(hashMapName, key string) (string, error) {
 
 	data, err := redis.String(resp, err)
 	if err != nil {
-		//logrus.WithFields(logrus.Fields{"err": err}).Error("redis Hget failed")
+		logrus.WithFields(logrus.Fields{"err": err}).Error("redis convert to string failed")
 	}
-	return data, err
+	return data, nil
 }
 
 func (cli *RedisClient) Hdel(hashMapName, key string) error {
@@ -193,12 +196,10 @@ func (cli *RedisClient) Hdel(hashMapName, key string) error {
 
 	number, err := redis.Uint64(resp, err)
 	if err != nil {
-		logrus.WithFields(logrus.Fields{"err": err}).Error("redis Hdel failed")
-		return err
+		logrus.WithFields(logrus.Fields{"err": err}).Error("redis uint64 convert failed")
 	}
 	if number <= 0 {
-		logrus.WithFields(logrus.Fields{"err": err}).Error("redis Hdel failed")
-		return errors.New("redi hdel return number is less than, del fail!")
+		logrus.WithFields(logrus.Fields{"err": err}).Error("redis Hdel number is less than 0(maybe the key is out of time)")
 	}
 	return nil
 }
@@ -218,7 +219,7 @@ func (cli *RedisClient) GetKeys(pattern string) ([]string, error) {
 		//logrus.WithFields(logrus.Fields{"err": err}).Error("redis Hget failed")
 	}
 
-	return data, err
+	return data, nil
 }
 
 func (cli *RedisClient) HKeys(hashMapName string) ([]string, error) {
@@ -236,7 +237,7 @@ func (cli *RedisClient) HKeys(hashMapName string) ([]string, error) {
 		//logrus.WithFields(logrus.Fields{"err": err}).Error("redis Hget failed")
 	}
 
-	return data, err
+	return data, nil
 }
 
 func (cli *RedisClient) Sadd(key, value string) error {
@@ -250,7 +251,7 @@ func (cli *RedisClient) Sadd(key, value string) error {
 		return err
 	}
 
-	return err
+	return nil
 }
 
 func (cli *RedisClient) Smembers(key string) ([]string, error) {
@@ -266,7 +267,6 @@ func (cli *RedisClient) Smembers(key string) ([]string, error) {
 	data, err := redis.Strings(resp, err)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{"err": err}).Error("redis convert to strings failed")
-		return []string{}, err
 	}
 	logrus.Println(data)
 	return data, nil
@@ -278,18 +278,16 @@ func (cli *RedisClient) Srem(key, value string) error {
 	}
 	resp, err := cli.conn.Do("srem", key, value)
 	if err != nil {
-		logrus.WithFields(logrus.Fields{"err": err}).Error("redis smembers failed")
+		logrus.WithFields(logrus.Fields{"err": err}).Error("redis srem failed, reason:key is not the element of set")
 		return err
 	}
 
-	data, _ := redis.Int(resp, err)
+	data, err := redis.Uint64(resp, err)
 	if err != nil {
-		logrus.WithFields(logrus.Fields{"err": err}).Error("key is not the element of set")
-		return err
+		logrus.WithFields(logrus.Fields{"err": err}).Error("redis convert to uint64 failed")
 	}
 	if data <= 0 {
 		logrus.WithFields(logrus.Fields{"err": err}).Error("Can't find the element in set")
-		return errors.New("Can't find the element in set")
 	}
 	return nil
 }
