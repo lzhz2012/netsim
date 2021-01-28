@@ -2,6 +2,7 @@ package redisWrapper
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
 
@@ -26,7 +27,9 @@ type ExecutionRequest struct {
 
 func TestRedisWrapper(t *testing.T) {
 	logrus.SetLevel(logrus.TraceLevel) //设置Trace以上的信息都显示
-
+	testing := []string{"qqqq", "sssss"}
+	tmp := fmt.Sprintf("%s", testing)
+	logrus.Printf(tmp)
 	cfg := []RedisConfig{
 		{RedisServerIP: "localhost", RedisConnType: "tcp", RedisServerPort: "6379", RedisServerPass: "shuffle123"},
 	}
@@ -37,19 +40,24 @@ func TestRedisWrapper(t *testing.T) {
 	}
 	// test Hset and Hget
 	WorkflowHashMapName := "shuffleWorkflowTest"
-	key := "abc"
+	keys := []string{"abc", "abc1", "abc2"}
 	message := "this is a book test1"
+	for _, key := range keys {
+		redisCli.Hset(WorkflowHashMapName, key, message)
+	}
 
-	redisCli.Hset(WorkflowHashMapName, key, message)
-	value, _ := redisCli.Hget(WorkflowHashMapName, key)
+	value, _ := redisCli.Hget(WorkflowHashMapName, keys[0])
 	logrus.WithFields(logrus.Fields{"value": value}).Info("redis Hget value")
-	err = redisCli.Hdel(WorkflowHashMapName, key)
+
+	testlzz, err := redisCli.Hmget(WorkflowHashMapName, keys)
+	logrus.Println(testlzz)
+	err = redisCli.Hdel(WorkflowHashMapName, keys[0])
 	if err != nil {
 		logrus.WithFields(logrus.Fields{"error": err}).Error("redis Hdel Failed")
 	}
 	//test get keys
 	pattern := "workflowqueue*"
-	keys, err := redisCli.GetKeys(pattern)
+	keys, err = redisCli.GetKeys(pattern)
 	logrus.WithFields(logrus.Fields{"keys": keys}).Info("redis Getkeys value")
 
 	// test mq
@@ -59,6 +67,8 @@ func TestRedisWrapper(t *testing.T) {
 		logrus.WithFields(logrus.Fields{"error": err}).Error("redis Push Failed")
 		return
 	}
+
+	// test lock && unlock
 	lockKey := "qqqq"
 	lockKey1 := "qqqq1" // dead lock
 	keys, err = redisCli.HKeys("shuffle_workflowexecutions_new1")
@@ -66,6 +76,17 @@ func TestRedisWrapper(t *testing.T) {
 	err = redisCli.Lock(lockKey, "qqq", 30000)
 	err = redisCli.Lock(lockKey1, "qqq1", 0)
 	err = redisCli.UnLock(lockKey)
+
+	// test set operations
+	setName := "set1"
+	err = redisCli.Sadd(setName, "test1")
+	err = redisCli.Sadd(setName, "test2")
+	err = redisCli.Sadd(setName, "test3")
+
+	temp1, err := redisCli.Smembers(setName)
+	logrus.Println(temp1)
+	err = redisCli.Srem(setName, "test3")
+	// test push
 	err = redisCli.Push("mqtest1", "this is the test message")
 	if err != nil {
 		logrus.WithFields(logrus.Fields{"error": err}).Error("redis Push Failed")

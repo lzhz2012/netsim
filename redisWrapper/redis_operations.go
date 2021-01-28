@@ -142,6 +142,28 @@ func (cli *RedisClient) Hset(hashMapName, key, value string) error {
 	return err
 }
 
+func (cli *RedisClient) Hmget(hashMapName string, keys []string) ([]string, error) {
+	if cli == nil {
+		return []string{}, errors.New("redis client is nil")
+	}
+	args := redis.Args{}
+	args = args.Add(hashMapName)
+	for _, q := range keys {
+		args = args.Add(q)
+	}
+	eles, err := cli.conn.Do("hmget", args...)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{"key": keys, "err": err}).Error("redis Hmget failed")
+		return []string{}, err
+	}
+	data, err := redis.Strings(eles, err)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{"err": err}).Error("redis convert to strings failed")
+		return []string{}, err
+	}
+	return data, err
+}
+
 func (cli *RedisClient) Hget(hashMapName, key string) (string, error) {
 	if cli == nil {
 		return "", errors.New("redis client is nil")
@@ -215,4 +237,59 @@ func (cli *RedisClient) HKeys(hashMapName string) ([]string, error) {
 	}
 
 	return data, err
+}
+
+func (cli *RedisClient) Sadd(key, value string) error {
+	if cli == nil {
+		return errors.New("redis client is nil")
+	}
+	resp, err := cli.conn.Do("sadd", key, value)
+	_ = resp
+	if err != nil {
+		logrus.WithFields(logrus.Fields{"err": err}).Error("redis sadd failed")
+		return err
+	}
+
+	return err
+}
+
+func (cli *RedisClient) Smembers(key string) ([]string, error) {
+	if cli == nil {
+		return []string{}, errors.New("redis client is nil")
+	}
+	resp, err := cli.conn.Do("smembers", key)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{"err": err}).Error("redis smembers failed")
+		return []string{}, err
+	}
+
+	data, err := redis.Strings(resp, err)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{"err": err}).Error("redis convert to strings failed")
+		return []string{}, err
+	}
+	logrus.Println(data)
+	return data, nil
+}
+
+func (cli *RedisClient) Srem(key, value string) error {
+	if cli == nil {
+		return errors.New("redis client is nil")
+	}
+	resp, err := cli.conn.Do("srem", key, value)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{"err": err}).Error("redis smembers failed")
+		return err
+	}
+
+	data, _ := redis.Int(resp, err)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{"err": err}).Error("key is not the element of set")
+		return err
+	}
+	if data <= 0 {
+		logrus.WithFields(logrus.Fields{"err": err}).Error("Can't find the element in set")
+		return errors.New("Can't find the element in set")
+	}
+	return nil
 }
