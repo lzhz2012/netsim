@@ -240,6 +240,24 @@ func (cli *RedisClient) HKeys(hashMapName string) ([]string, error) {
 	return data, nil
 }
 
+func (cli *RedisClient) HVals(hashMapName string) ([]string, error) {
+	if cli == nil {
+		return []string{}, errors.New("redis client is nil")
+	}
+	resp, err := cli.conn.Do("hvals", hashMapName)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{"err": err}).Error("redis Get keys failed")
+		return []string{}, err
+	}
+
+	data, err := redis.Strings(resp, err)
+	if err != nil {
+		//logrus.WithFields(logrus.Fields{"err": err}).Error("redis Hget failed")
+	}
+
+	return data, nil
+}
+
 func (cli *RedisClient) Sadd(key, value string) error {
 	if cli == nil {
 		return errors.New("redis client is nil")

@@ -51,6 +51,8 @@ func TestRedisWrapper(t *testing.T) {
 
 	testlzz, err := redisCli.Hmget(WorkflowHashMapName, keys)
 	logrus.Println(testlzz)
+	testlzz2, err := redisCli.HVals(WorkflowHashMapName)
+	logrus.Println(testlzz2)
 	err = redisCli.Hdel(WorkflowHashMapName, keys[0])
 	if err != nil {
 		logrus.WithFields(logrus.Fields{"error": err}).Error("redis Hdel Failed")
