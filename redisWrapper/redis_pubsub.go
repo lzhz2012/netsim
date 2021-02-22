@@ -29,12 +29,6 @@ func Subscrible(ctx context.Context, cli interface{}, clusterFlag bool, cb Subsc
 		return errors.New("subscribler is nil")
 	}
 
-	_, err := pubSub.Receive(ctx)
-	if err != nil {
-		log.Error("subscrible rev failed")
-		return err
-	}
-
 	// 订阅后获取消息
 	go func() {
 		ch := pubSub.Channel()
