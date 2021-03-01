@@ -15,6 +15,30 @@ var clusterClient *redis.ClusterClient
 
 func init() {
 	log.SetFlags(log.Llongfile | log.Lshortfile)
+
+	slots := []redis.ClusterSlot{
+		// First node with 1 master and 1 slave.
+		{
+			Start: 0,
+			End:   8191,
+			Nodes: []redis.ClusterNode{{
+				Addr: ":7000", // master
+			}, {
+				Addr: ":8000", // 1st slave
+			}},
+		},
+		// Second node with 1 master and 1 slave.
+		{
+			Start: 8192,
+			End:   16383,
+			Nodes: []redis.ClusterNode{{
+				Addr: ":7001", // master
+			}, {
+				Addr: ":8001", // 1st slave
+			}},
+		},
+	}
+	_ = slots
 	// 连接redis集群
 	clusterClient = redis.NewClusterClient(&redis.ClusterOptions{
 		Addrs: []string{ // 填写master主机
@@ -75,9 +99,14 @@ func TestConnByRedisCluster(t *testing.T) {
 	fmt.Println(s1)
 }
 
+// BLPOP {workflowqueue}shuffle5 {workflowqueue}Shuffle1111111  0
+// BLPOP workflowqueueshuffle5 workflowqueueShuffle1111111  0
 func TestConnByRedisClusterConsumer(t *testing.T) {
-	queues := []string{"{workflowqueue}Shuffle", "{workflowqueue}Shuffle1111111"}
+	queues := []string{"workflowqueueshuffle5", "workflowqueueShuffle1111111"}
+	//queues = []string{"{workflowqueue}Shuffle1111111"}
+	// queues = []string{"workflowqueueShuffle", "workflowqueueShuffle1111111"}
 	slice, err := clusterClient.BLPop(time.Second*0, queues...).Result()
+	// slice, err := clusterClient.BLPop(time.Second*0, queues[1]).Result()
 	// slice, err := clusterClient.BLPop(time.Second*0, "name1111", "name1").Result()
 	var data string
 	if err == nil {

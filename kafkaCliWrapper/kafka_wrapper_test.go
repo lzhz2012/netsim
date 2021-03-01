@@ -23,7 +23,7 @@ func TestSyncProducer(t *testing.T) {
 	//serverAddress := []string{"kafakaServer:49162", "kafakaServer:49159", "kafakaServer:49160", "kafakaServer:49161"}
 	topic := []string{"test"}
 	log.Printf("%X", []byte(testData))
-	//SyncProducer(serverAddress, topic[0], testData)
+	SyncProducer(serverAddress, topic[0], testData)
 	//AsyncProducer(testServer)
 	var wg = &sync.WaitGroup{}
 	wg.Add(1)

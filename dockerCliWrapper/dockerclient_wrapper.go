@@ -317,3 +317,16 @@ func (cli *DockerCliWrapper) IsContainerRunning(name string) bool {
 
 	return false
 }
+
+func (cli *DockerCliWrapper) Close() error {
+	dockercli := cli.DockerCli
+	if dockercli == nil {
+		log.Error("dockerclient is nil")
+		return errors.New("docker client is nil")
+	}
+
+	if err := dockercli.Close(); err != nil {
+		log.Error("close docker client falied")
+	}
+	return nil
+}

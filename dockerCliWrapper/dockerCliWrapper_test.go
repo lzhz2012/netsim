@@ -11,7 +11,6 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/lzhz2012/netsim/utils"
-	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -164,14 +163,15 @@ func TestBuildImage(t *testing.T) {
 
 	dockerCliCfg := &DockerCliCfg{DockerApiVersion: "1.40"}
 	cli, err := NewClient(dockerCliCfg)
+	defer cli.Close()
 	if err != nil {
-		logrus.Error("Unable to create docker client", err)
+		log.Error("Unable to create docker client", err)
 	}
 
 	tag := fmt.Sprintf("%s-%s", "app_sdk", "1.0.0")
 	buildCfg := BuildCfg{ImageName: tag, TarFile: dst}
 	if err := cli.BuildImage(&buildCfg); err != nil {
-		logrus.Debug("Build error:", err.Error())
+		log.Debug("Build error:", err.Error())
 		return
 	}
 }
