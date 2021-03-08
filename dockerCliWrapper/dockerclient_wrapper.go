@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/docker/docker/api/types"
@@ -66,11 +67,18 @@ func NewClient(dockerCliCfg *DockerCliCfg) (*DockerCliWrapper, error) {
 	/* only new version can support*/
 	//cli.DockerCli, err = dockerclient.NewClientWithOpts(dockerclient.FromEnv, dockerclient.WithVersion(dockerCliCfg.DockerApiVersion)) //仅1.42版本支持
 	//使用定制化docker Api中Ip和Port不知道怎么填写
+	var dockerHost string
 	if dockerCliCfg.DockerSeverIp != "" && dockerCliCfg.DockerSeverPort != "" {
-		dockerHost := "tcp://" + dockerCliCfg.DockerSeverIp + ":" + dockerCliCfg.DockerSeverPort
-		os.Setenv("DOCKER_HOST", dockerHost)
+		dockerHost = "tcp://" + dockerCliCfg.DockerSeverIp + ":" + dockerCliCfg.DockerSeverPort
+	} else {
+		sysType := runtime.GOOS
+		if sysType == "linux" {
+			dockerHost = "unix:///var/run/docker.sock"
+		} else if sysType == "windows" {
+			dockerHost = "npipe:////./pipe/docker_engine"
+		}
 	}
-
+	os.Setenv("DOCKER_HOST", dockerHost)
 	//cli.DockerCli, err = dockerclient.NewClient(dockerHost, dockerCliCfg.DockerApiVersion, nil, map[string]string{"Content-type": "application/x-tar"})
 	os.Setenv("DOCKER_API_VERSION", dockerCliCfg.DockerApiVersion)
 
