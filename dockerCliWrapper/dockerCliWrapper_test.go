@@ -118,12 +118,16 @@ func TestRemoveContainer(t *testing.T) {
 }
 
 /* need expose 2375 port on the remote server*/
-func TestConnectOtherHost(t *testing.T) {
+func TestConnectRemoteHost(t *testing.T) {
 	var dockerCliCfg *DockerCliCfg
 	var cli *DockerCliWrapper
 	var err error
 	dockerCliCfg = &DockerCliCfg{DockerApiVersion: "1.40", DockerSeverIp: "10.1.5.226", DockerSeverPort: "2375"} // non tls connection
 	cli, _ = NewClient(dockerCliCfg)
+	containerID := "61c237918035"
+	containerJson, _ := cli.DockerCli.ContainerInspect(context.Background(), containerID)
+	_ = containerJson
+
 	images, err := cli.DockerCli.ImageList(context.Background(), types.ImageListOptions{})
 	_ = images
 	if err != nil {
@@ -143,8 +147,11 @@ func TestIsContainerRunning(t *testing.T) {
 	cli, _ := NewClient(dockerCliCfg)
 	if !cli.IsContainerRunning("shuffle-agent") {
 		log.Printf("not running!")
+	} else {
+		log.Printf("running!")
 	}
 }
+
 func deleTarFile(fileName string) error {
 	if err := os.Remove(fileName); err != nil {
 		fmt.Println(err)

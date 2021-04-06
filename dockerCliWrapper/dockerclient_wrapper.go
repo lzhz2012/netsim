@@ -26,7 +26,6 @@ type DockerCliCfg struct {
 }
 
 type BuildCfg struct {
-	//下面两个是build相关
 	ImageName   string
 	TarFile     string
 	ProjectName string
@@ -64,9 +63,7 @@ func CheckContainerConfig(cfg *ContainerCfg) error {
 
 func NewClient(dockerCliCfg *DockerCliCfg) (*DockerCliWrapper, error) {
 	var cli DockerCliWrapper
-	/* only new version can support*/
-	//cli.DockerCli, err = dockerclient.NewClientWithOpts(dockerclient.FromEnv, dockerclient.WithVersion(dockerCliCfg.DockerApiVersion)) //仅1.42版本支持
-	//使用定制化docker Api中Ip和Port不知道怎么填写
+	var err error
 	var dockerHost string
 	if dockerCliCfg.DockerSeverIp != "" && dockerCliCfg.DockerSeverPort != "" {
 		dockerHost = "tcp://" + dockerCliCfg.DockerSeverIp + ":" + dockerCliCfg.DockerSeverPort
@@ -78,39 +75,14 @@ func NewClient(dockerCliCfg *DockerCliCfg) (*DockerCliWrapper, error) {
 			dockerHost = "npipe:////./pipe/docker_engine"
 		}
 	}
-	os.Setenv("DOCKER_HOST", dockerHost)
-	//cli.DockerCli, err = dockerclient.NewClient(dockerHost, dockerCliCfg.DockerApiVersion, nil, map[string]string{"Content-type": "application/x-tar"})
-	os.Setenv("DOCKER_API_VERSION", dockerCliCfg.DockerApiVersion)
 
-	dockercli, err := dockerclient.NewEnvClient()
+	cli.DockerCli, err = dockerclient.NewClient(dockerHost, dockerCliCfg.DockerApiVersion, nil, map[string]string{"Content-type": "application/x-tar"})
 	if err != nil {
 		return nil, err
 	}
-	//dockercli.SetCustomHTTPHeaders(map[string]string{"Content-type": "application/x-tar"})
-	cli.DockerCli = dockercli
+
 	return &cli, nil
 }
-
-// func NewClient1(dockerCliCfg *DockerCliCfg) (*DockerCliWrapper, error) {
-// 	var cli DockerCliWrapper
-// 	//cli.DockerCli, err = dockerclient.NewClientWithOpts(dockerclient.FromEnv, dockerclient.WithVersion(dockerCliCfg.DockerApiVersion)) //仅1.42版本支持
-// 	//使用定制化docker Api中Ip和Port不知道怎么填写
-// 	if dockerCliCfg.DockerSeverIp != "" && dockerCliCfg.DockerSeverPort != "" {
-// 		//dockerHost := "tcp://" + dockerCliCfg.DockerSeverIp + ":" + dockerCliCfg.DockerSeverPort
-// 		dockerHost := "ssh://" + dockerCliCfg.Username + "@" + dockerCliCfg.DockerSeverIp + ":" + dockerCliCfg.DockerSeverPort
-// 		os.Setenv("DOCKER_HOST", dockerHost)
-// 	}
-
-// 	//cli.DockerCli, err = dockerclient.NewClient(dockerHost, dockerCliCfg.DockerApiVersion, nil, map[string]string{"Content-type": "application/x-tar"})
-// 	os.Setenv("DOCKER_API_VERSION", dockerCliCfg.DockerApiVersion)
-// 	dockercli, err := client.NewClientWithOpts(client.FromEnv)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	//dockercli.SetCustomHTTPHeaders(map[string]string{"Content-type": "application/x-tar"})
-// 	cli.DockerCli = dockercli
-// 	return &cli, nil
-// }
 
 func (cli *DockerCliWrapper) PushImage(cfg *PushCfg) error {
 
@@ -307,7 +279,6 @@ func (cli *DockerCliWrapper) RemoveContainer(containername string) error {
 	return err
 }
 
-//FIXME:目前仅仅做了在单一机器上的判断，后面分布式的时候
 func (cli *DockerCliWrapper) IsContainerRunning(name string) bool {
 	name = "/" + name
 	listOps := types.ContainerListOptions{All: true}
